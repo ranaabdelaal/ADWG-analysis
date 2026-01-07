@@ -1,5 +1,5 @@
 # 0. Data Reading
-PWD= read.table("C:/Users/ranam/PWD-our-project-(c)/PWD.RData")
+PWD= read.table("C:/Users/ranam/stat/PWD-our-project-(c)")
 View(PWD)
 
 # 1. Descriptive statistics
@@ -204,199 +204,58 @@ Right.value_female
 # As the confidence increases, the precision decreases(the range is wider)
 # so at 99% confidence, the range is wider than at 90% confidence
 
+View(PWD)
+# 7. Linear model
+# a. Fit a linear regression to the data and interpret the 
+# regression coefficient (for one of the hypotheses mentioned above)
 
+### I will Fit two multiple linear regression model with ADWG0021 as outcome variable.
+# and W0 as the regressor. 
+simple.regression <- lm(ADWG0021 ~ W0, data=PWD)
+summary(simple.regression)
 
-# 6. Hypothesis testing
-# A. We hypothesize that ADWG0021is different between male vs female. 
-#Assuming normality and homoscedasticity, 
-#can you test this hypothesis using the statistical hypothesis framework
+#Model explanation: when W0 is increased by 1 unit, the ADWG0021 is changed
+# by 0.64 units. However, the W0 explanation of ADWG0021 is not 
+# statistically significant as the p.value is bigger than alpha.
+# The Q1 & Q3 of the residuals are not equal so this is an
+# indication that the residuals are not normally distributed.
+# R^2 of the model is 0.07, indicating that the W0 only explains 7% of 
+# the changes in ADWG0021 and it is also not a significant explanation
+# because of the high p.value
 
+#b. Calculate and interpret a 95% confidence interval 
+#of the regression slope (bonus)
 
-# Two groups, normally distributed data of equal variance
-# The statistical test of choice is: (Parametric Two sample t-test)
+# extract slope and its standard error
+beta_W0 <- coef(summary(simple.regression))["W0", "Estimate"]
+beta_W0
+se_W0   <- coef(summary(simple.regression))["W0", "Std. Error"]
+se_W0
 
-install.packages("dunn.test")
-install.packages("report")
-install.packages("car")
-install.packages("multcomp")
-library(dunn.test)
-library(report)
-library(car)
-library(multcomp)
+# then we apply this formula
+# CI= Beta+- 1.96*SE
+# 95% confidence interval
+Left.value_W0  <- beta_W0 - 1.96 * se_W0
+Right.value_W0 <- beta_W0 + 1.96 * se_W0
+Left.value_W0
+Right.value_W0
 
-t.test(ADWG0021~Sex, data=PWD, var.equal = TRUE)
-# p-value: 0.7 not significant
-# Fail to reject the null hypothesis,
-# # There is no difference in the mean of ADWG0021 between males and females
+# The confidence interval includes zero, which means we are 95% confident
+# that the population parameter lies within this range which includes zero
+# indicating that it is not significant which is consistant with 
+# the model results.
 
-# B. Assess whether the previous test assumptions have been met for the test.
-#The independent two sample t-test assumptions are
-# Normal distribution & equal variance
-
-PWD$Sex<-factor(PWD$Sex,labels=c("male", "female"))
-# To check the normality:
-# Normality of ADWG0021 in males
-qqnorm(PWD[PWD$Sex == "male",]$ADWG0021, main='Males ADWG0021')
-qqline(PWD[PWD$Sex == "male",]$ADWG0021)
-hist(PWD[PWD$Sex == "male",]$ADWG0021, main='Males ADWG0021')
-shapiro.test(PWD[PWD$Sex == "male",]$ADWG0021)
-# Shapiro P-value: 0.97 > not significant > fail to reject the null
-# The QQplot and the box plot, the data appear to be approximately normally distributed
-# The data is normally distributed
-
-# Normality of ADWG0021 in females
-qqnorm(PWD[PWD$Sex == "female",]$ADWG0021, main='Females ADWG0021')
-qqline(PWD[PWD$Sex == "female",]$ADWG0021)
-hist(PWD[PWD$Sex == "female",]$ADWG0021, main='Females ADWG0021')
-shapiro.test(PWD[PWD$Sex == "female",]$ADWG0021)
-# Shapiro P-value: 0.95 > not significant > fail to reject the null
-# The QQplot and the box plot, the data appear to be approximately normally distributed
-# The data is normally distributed
-
-# To check Variance
-boxplot(ADWG0021~Sex, data=PWD)
-leveneTest(ADWG0021~Sex, data=PWD)
-# P-value = 0.30 > Not significant > Fail to reject the null
-# The two groups are of equal variance
-var.test(ADWG0021~Sex, data=PWD)
-# P-value = 0.41 > Not significant > Fail to reject the null
-# The two groups are of equal variance
-
-# So YES the previous test assumptions have been met
-
-# C. We hypothesize that ADWG0021is “different” in the group receiving 
-#Treatment A (normal feed + ZnO)  compared to Treatment B (normal feed + nutraceuticals). 
-#Can you test this hypothesis assuming heteroscedasticity?
-
-# Two independent groups
-# Unequal variance assuming heteroscedasticity
-# The statistical test of Choice is Welch’s t-test
-PWD$Treatment<-factor(PWD$Treatment,labels=c("A", "B","C","D","E"))
-t.test(ADWG0021 ~ Treatment,data = PWD, subset = Treatment %in% c("A", "B"))
-# P-value: 0.02 > Significant > The ADWG0021 is different in groups recieving
-# Treatment A compared to Treatment B
-
-# D. Assess the previous test assumption
-# I am going to assess the: Normality & Equal Variance
-# ADWG0021 in ttt A is not normal in ttt B is not normal
-# The two groups are of unequal variance
-# So we should have chosen the Mann-Whitney U test (Wilcoxon Sum of Ranks) not the welch's
-
-# Normality of ADWG0021 in Treatment A group
-qqnorm(PWD[PWD$Treatment == "A",]$ADWG0021, main='Treatment ((A)) ADWG0021')
-qqline(PWD[PWD$Treatment == "A",]$ADWG0021)
-hist(PWD[PWD$Treatment == "A",]$ADWG0021, main='Treatment ((A)) ADWG0021')
-shapiro.test(PWD[PWD$Treatment == "A",]$ADWG0021)
-# Shapiro P-value is significant > Reject the null > Data is not normally distributed
-#Checking the QQ plot and the histogram the data also 
-# appears to be not normally distributed
-
-# Normality of ADWG0021 in Treatment B group
-qqnorm(PWD[PWD$Treatment == "B",]$ADWG0021, main='Treatment ((B)) ADWG0021')
-qqline(PWD[PWD$Treatment == "B",]$ADWG0021)
-hist(PWD[PWD$Treatment == "B",]$ADWG0021, main='Treatment ((B)) ADWG0021')
-shapiro.test(PWD[PWD$Treatment == "B",]$ADWG0021)
-# Shapiro p-value is not significant > fail to reject the null > data is normally distributed
-# But because of the small sample size, I will not rely oh the Shapiro test,
-# The histogram shows a clear Right Skewed data and my objective judgement
-# is that the data is not normally distributed
-
-
-# To check Variance
-# Subset the data first
-subtreatment <- droplevels(PWD[PWD$Treatment %in% c("A","B"), ])
-View(subtreatment)
-boxplot(ADWG0021 ~ Treatment, data = subtreatment ,col = c("#E9C46A", "#9B2226"))
-leveneTest(ADWG0021~Treatment, data=subtreatment)
-# Levene P-value = 0.62 > Not significant > Fail to reject the null
-# The two groups are of equal variance
-var.test(ADWG0021~Treatment, data=subtreatment)
-# var.test P-value = 0.95 > Not significant > Fail to reject the null
-# The two groups are of equal variance
-
-# Because of the small sample size, I will not rely on the levene and the F-test p values
-# The boxplot shows a clear difference in the variance,
-# My objective judgement is that the data is of unequal variance
-
-# E. We hypothesize that ADWG0021is different between the different Treatments. 
-#Can you perform a comparison between the different groups, 
-#after assessing the assumptions and performing post-hoc testing 
-#(assuming normality and homoscedasticity)?
-
-# We have 5 treatment groups
-# So after checking the assumptions we will choose between
-# ANOVE & Kruskal Wallis
-
-install.packages("dunn.test")
-install.packages("report")
-install.packages("car")
-install.packages("multcomp")
-install.packages("ggstatsplot")
-library(ggstatsplot)
-library(dunn.test)
-library(report)
-library(car)
-library(multcomp)
-library(ggplot2)
-
-## Check the equality of variances 
-#Can not use var.test because we have more than 2 groups
-
-plot(ADWG0021~Treatment,data=PWD,main="equal variances")
-
-ggplot(PWD) +
-  aes(x = Treatment, y = ADWG0021, color = Treatment) +
-  geom_boxplot()
-
-
-leveneTest(ADWG0021~Treatment,data=PWD)
-# Levene P-value = 0.89 > Not significant > Fail to reject the null
-# given the small sample size in each group (n=8), levene is considered unreliable
-# especially that the boxplots shows clear difference in the variance between the groups
-# especially treatment A
-# My objective judgement is that the 5 groups are of unequal variance
-
-#Check normality within each group
-par(mfrow=c(1,1))
-hist(PWD[PWD$Treatment=="A",]$ADWG0021,main="normality Treatment #A")
-hist(PWD[PWD$Treatment=="B",]$ADWG0021,main="normality Treatment #B")
-hist(PWD[PWD$Treatment=="C",]$ADWG0021,main="normality Treatment #C")
-hist(PWD[PWD$Treatment=="D",]$ADWG0021,main="normality Treatment #D")
-hist(PWD[PWD$Treatment=="E",]$ADWG0021,main="normality Treatment #E")
-
-shapiro.test(PWD[PWD$Treatment == "A",]$ADWG0021)
-shapiro.test(PWD[PWD$Treatment == "B",]$ADWG0021)
-shapiro.test(PWD[PWD$Treatment == "C",]$ADWG0021)
-shapiro.test(PWD[PWD$Treatment == "D",]$ADWG0021)
-shapiro.test(PWD[PWD$Treatment == "E",]$ADWG0021)
-
-# According to shapiro test, p-value of Treatment A group is significant
-# so the data is not normally distributed
-# According to the histograms, all groups appear to be right skewed,
-
-
-# In case of multiple groups comparison, if one group is not normally distributed
-# we chose the non parametric test
-# So the statistical test of choice is: Kruskal wallis
-
-kruskal.test(ADWG0021 ~ Treatment, data=PWD)
-# P-value is not significant > Fail to reject the null hypothesis >
-# there is no difference in the groups means
-
-#Assuming normality and homoscedasticity, the statistical test of choice is:
-#One Way Anova
-
-AnovaModel <- aov(ADWG0021 ~ Treatment, data=PWD)
-summary(AnovaModel)
-
-##### Anova is not significant 
-# and there is no point in doing a post-hoc test
-
-hoc<-TukeyHSD(AnovaModel) 
-hoc
-
-# ttt B compared to ttt A is significant by Tukey, but this significance
-# is not taken into account because the Anova is not significant.
-
-#### DONE!
-
+# C. Estimating the average ADWG0021 change with changing the gender from 1 to 2 (bonus).
+# Since the sex variable is categorized as numerical in the dataset
+# I will fit another linear regression model to include the gender
+model2 <- lm(ADWG0021 ~ Sex, data=PWD)
+summary(model2)
+str(PWD)
+#Explanation:
+#Even though the residuals seems somewhat normally distributed
+# but the change in sex from 1 to 2, ecplains the decrease in ADWG0021 
+# by 1.92 units however this explanation is not statistically significant
+# because of the very large p.value
+# # Th e R^2 is 0.00257, which means that the change in sex 
+# from 1 to 2 only captures 0.25 of the variability in the ADWG0021
+# and it is not statistically significant p.value larger than alpha
